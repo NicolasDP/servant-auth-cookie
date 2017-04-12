@@ -108,6 +108,7 @@ import Servant.API.Experimental.Auth (AuthProtect)
 import Servant.API.ResponseHeaders (AddHeader)
 import Servant.Server (err403)
 import Servant.Server.Experimental.Auth
+import Servant.Client
 import Web.Cookie
 import qualified Crypto.MAC.HMAC        as H
 import qualified Data.ByteArray         as BA
@@ -121,7 +122,7 @@ import Control.Applicative
 #endif
 
 #if MIN_VERSION_servant(0,9,0)
-import Servant (ToHttpApiData (..))
+import Servant (ToHttpApiData (..), FromHttpApiData(..))
 #else
 import Data.ByteString.Conversion (ToByteString (..))
 #endif
@@ -158,6 +159,7 @@ data WithMetadata a = WithMetadata
   }
 
 type instance AuthServerData (AuthProtect "cookie-auth") = WithMetadata AuthCookieData
+type instance AuthClientData (AuthProtect "cookie-auth") = EncryptedSession
 
 -- | Cookie representation.
 data Cookie = Cookie
@@ -178,6 +180,9 @@ emptyEncryptedSession = EncryptedSession ""
 instance ToHttpApiData EncryptedSession where
   toHeader (EncryptedSession s) = s
   toUrlPiece = error "toUrlPiece @EncryptedSession: not implemented"
+instance FromHttpApiData EncryptedSession where
+  parseHeader = Right . EncryptedSession
+  parseUrlPiece = error "parseUrlPiece @EncryptedSession: not implemented"
 #else
 instance ToByteString EncryptedSession where
   builder (EncryptedSession s) = builder s
